@@ -1,0 +1,3712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estación 3 · Escape Room de Hardware y Redes</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#060a08;
+    --panel:#0b1410;
+    --panel-2:#0f1c15;
+    --green:#39ff6a;
+    --green-dim:#1f7a3d;
+    --green-faint:#0d3320;
+    --amber:#ffb000;
+    --red:#ff4d4d;
+    --ink:#d9f5e3;
+    --ink-dim:#7fae8f;
+    --border:#1c3a28;
+    font-size:16px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:18px 12px 60px;
+    line-height:1.5;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(57,255,106,0.035) 0px,
+      rgba(57,255,106,0.035) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events:none;
+    mix-blend-mode:screen;
+    z-index:50;
+  }
+
+  .crt-frame{
+    width:100%;
+    max-width:760px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    box-shadow:
+      0 0 0 1px #000,
+      0 0 40px rgba(57,255,106,0.06),
+      inset 0 0 60px rgba(0,0,0,0.6);
+    overflow:hidden;
+    position:relative;
+  }
+
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    background:linear-gradient(180deg,#0f1c15,#0a120d);
+    border-bottom:1px solid var(--border);
+    font-family:'Share Tech Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+    letter-spacing:0.08em;
+  }
+
+  .dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    display:inline-block;
+  }
+
+  .dot.r{background:#5a1f1f;}
+  .dot.y{background:#5a4a1f;}
+  .dot.g{background:var(--green-dim);}
+
+  .titlebar .path{
+    margin-left:auto;
+    opacity:0.8;
+  }
+
+  .screen{
+    padding:26px 22px 30px;
+    display:none;
+  }
+
+  .screen.active{
+    display:block;
+    animation:fadein .35s ease;
+  }
+
+  @keyframes fadein{
+    from{
+      opacity:0;
+      transform:translateY(4px);
+    }
+    to{
+      opacity:1;
+      transform:none;
+    }
+  }
+
+  .eyebrow{
+    font-family:'Share Tech Mono', monospace;
+    color:var(--green);
+    font-size:12px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    opacity:0.85;
+    margin-bottom:6px;
+  }
+
+  h1,h2,h3{
+    font-family:'Share Tech Mono', monospace;
+    color:var(--green);
+    margin:0 0 10px;
+    letter-spacing:0.02em;
+  }
+
+  h1{font-size:26px;}
+  h2{font-size:19px;}
+  h3{
+    font-size:15px;
+    color:var(--amber);
+  }
+
+  p{
+    margin:0 0 12px;
+    color:var(--ink);
+  }
+
+  .dim{
+    color:var(--ink-dim);
+  }
+
+  .mono-block{
+    background:#000;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:14px 16px;
+    font-size:13px;
+    color:var(--green);
+    white-space:pre-wrap;
+  }
+
+  .progress{
+    display:flex;
+    gap:6px;
+    margin-bottom:22px;
+  }
+
+  .progress .seg{
+    flex:1;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .progress .seg.done{
+    background:var(--green-dim);
+  }
+
+  .progress .seg.current{
+    background:var(--panel-2);
+  }
+
+  .progress .seg.current::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:var(--green);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{opacity:.25;}
+    50%{opacity:.85;}
+  }
+
+  button{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    cursor:pointer;
+    background:var(--green-faint);
+    color:var(--green);
+    border:1px solid var(--green-dim);
+    border-radius:6px;
+    padding:10px 16px;
+    font-size:14px;
+    transition:all .15s ease;
+  }
+
+  button:hover:not(:disabled){
+    background:var(--green-dim);
+    color:#04120a;
+  }
+
+  button:focus-visible{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+
+  button:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+  }
+
+  button.ghost{
+    background:transparent;
+  }
+
+  button.primary{
+    background:var(--green);
+    color:#04120a;
+    border-color:var(--green);
+  }
+
+  button.primary:hover:not(:disabled){
+    background:#5dffa0;
+  }
+
+  button.small{
+    padding:6px 10px;
+    font-size:12px;
+  }
+
+  input[type=text],
+  input[type=password]{
+    font-family:'IBM Plex Mono', monospace;
+    background:#000;
+    color:var(--green);
+    border:1px solid var(--green-dim);
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:14px;
+    width:100%;
+    letter-spacing:0.05em;
+  }
+
+  input[type=text]:focus,
+  input[type=password]:focus{
+    outline:2px solid var(--amber);
+    outline-offset:1px;
+  }
+
+  ::placeholder{
+    color:#3d6b4e;
+  }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .field-row{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+
+  .field-row input{
+    flex:1;
+  }
+
+  .msg{
+    margin-top:12px;
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:6px;
+    display:none;
+  }
+
+  .msg.show{
+    display:block;
+  }
+
+  .msg.ok{
+    background:rgba(57,255,106,0.1);
+    color:var(--green);
+    border:1px solid var(--green-dim);
+  }
+
+  .msg.err{
+    background:rgba(255,77,77,0.08);
+    color:var(--red);
+    border:1px solid #5a2323;
+  }
+
+  details.hint{
+    margin-top:16px;
+    border:1px dashed var(--border);
+    border-radius:6px;
+    padding:8px 12px;
+  }
+
+  details.hint summary{
+    cursor:pointer;
+    color:var(--amber);
+    font-size:13px;
+    font-family:'Share Tech Mono',monospace;
+    letter-spacing:0.05em;
+  }
+
+  details.hint p{
+    margin-top:8px;
+    font-size:13px;
+    color:var(--ink-dim);
+  }
+
+  .lockwrap{
+    text-align:center;
+    padding:30px 6px;
+  }
+
+  .lockwrap .lockicon{
+    font-size:34px;
+    margin-bottom:10px;
+  }
+
+  /* =========================
+     RETO 1
+  ========================= */
+
+  .match-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin:16px 0;
+  }
+
+  .match-card{
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    border-radius:8px;
+    padding:12px 14px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  .match-card .letter-badge{
+    flex:0 0 auto;
+    width:30px;
+    height:30px;
+    border-radius:6px;
+    background:var(--green-faint);
+    border:1px solid var(--green-dim);
+    color:var(--green);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Share Tech Mono',monospace;
+    font-weight:700;
+  }
+
+  .match-card .desc{
+    flex:1;
+    font-size:13px;
+    color:var(--ink-dim);
+  }
+
+  .match-card select{
+    font-family:'IBM Plex Mono', monospace;
+    background:#000;
+    color:var(--green);
+    border:1px solid var(--green-dim);
+    border-radius:6px;
+    padding:8px;
+    font-size:13px;
+  }
+
+  /* =========================
+     RETO 2 - SOPA 15x15
+  ========================= */
+
+  #wsGrid{
+    display:grid;
+    grid-template-columns:repeat(15,1fr);
+    gap:2px;
+    max-width:520px;
+    width:100%;
+    margin:16px auto;
+    user-select:none;
+    touch-action:none;
+  }
+
+  .ws-cell{
+    aspect-ratio:1/1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#000;
+    border:1px solid var(--border);
+    border-radius:3px;
+    font-size:11px;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .1s, color .1s;
+  }
+
+  .ws-cell.selecting{
+    background:var(--green-faint);
+    color:var(--green);
+  }
+
+  .ws-cell.found{
+    background:var(--green-dim);
+    color:#04120a;
+    font-weight:700;
+  }
+
+  .word-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:14px 0;
+    justify-content:center;
+  }
+
+  .word-chip{
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    color:var(--ink-dim);
+    font-family:'Share Tech Mono',monospace;
+    letter-spacing:0.03em;
+  }
+
+  .word-chip.found{
+    border-color:var(--green-dim);
+    color:var(--green);
+    text-decoration:line-through;
+  }
+
+  /* =========================
+     RETO 3
+  ========================= */
+
+  #cwGrid{
+    display:grid;
+    gap:2px;
+    margin:16px auto;
+    width:max-content;
+    max-width:100%;
+  }
+
+  .cw-cell{
+    width:30px;
+    height:30px;
+    position:relative;
+    background:transparent;
+  }
+
+  .cw-cell.blocked{
+    background:transparent;
+  }
+
+  .cw-cell.active input{
+    width:100%;
+    height:100%;
+    text-align:center;
+    text-transform:uppercase;
+    background:#000;
+    border:1px solid var(--green-dim);
+    color:var(--green);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    border-radius:3px;
+    padding:0;
+  }
+
+  .cw-cell.active.hl input{
+    border-color:var(--amber);
+    color:var(--amber);
+    background:rgba(255,176,0,0.08);
+  }
+
+  .cw-cell .num{
+    position:absolute;
+    top:1px;
+    left:2px;
+    font-size:8px;
+    color:var(--ink-dim);
+    pointer-events:none;
+    z-index:2;
+  }
+
+  .clue-list{
+    margin-top:14px;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+
+  .clue-list b{
+    color:var(--green);
+  }
+
+  .cw-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+
+  /* =========================
+     RETO 4 Y 5
+  ========================= */
+
+  .order-pool{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin:14px 0;
+  }
+
+  .order-item{
+    text-align:left;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--ink);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:13px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+
+  .order-item .tag{
+    color:var(--amber);
+    font-family:'Share Tech Mono',monospace;
+    font-weight:700;
+    flex:0 0 auto;
+  }
+
+  .order-item.used{
+    opacity:0.25;
+    pointer-events:none;
+  }
+
+  .sequence-track{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    min-height:40px;
+    padding:10px;
+    border:1px dashed var(--border);
+    border-radius:8px;
+    margin:12px 0;
+    align-items:center;
+  }
+
+  .seq-chip{
+    background:var(--green-faint);
+    border:1px solid var(--green-dim);
+    color:var(--green);
+    padding:5px 10px;
+    border-radius:6px;
+    font-family:'Share Tech Mono',monospace;
+    font-size:13px;
+  }
+
+  .final-code{
+    font-family:'Share Tech Mono',monospace;
+    font-size:32px;
+    color:var(--amber);
+    letter-spacing:0.25em;
+    text-align:center;
+    margin:18px 0;
+    text-shadow:0 0 12px rgba(255,176,0,0.5);
+  }
+
+  footer.note{
+    margin-top:26px;
+    border-top:1px solid var(--border);
+    padding-top:12px;
+    font-size:11px;
+    color:#4a6f58;
+  }
+
+  footer.note summary{
+    cursor:pointer;
+    color:var(--ink-dim);
+  }
+
+  @media (max-width:480px){
+    h1{font-size:21px;}
+    .final-code{
+      font-size:24px;
+      letter-spacing:0.15em;
+    }
+
+    .cw-cell{
+      width:24px;
+      height:24px;
+    }
+
+    .ws-cell{
+      font-size:9px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="crt-frame">
+
+  <div class="titlebar">
+    <span class="dot r"></span>
+    <span class="dot y"></span>
+    <span class="dot g"></span>
+    <span>estacion3.sys</span>
+    <span class="path">/lab/hardware-redes</span>
+  </div>
+
+  <!-- =========================
+       BOOT
+  ========================= -->
+
+  <div class="screen active" id="screen-boot">
+
+    <div class="mono-block" id="bootLog">
+      Iniciando diagnóstico…
+    </div>
+
+    <div class="row" style="margin-top:18px; justify-content:center;">
+
+      <button
+        class="primary"
+        id="btnStart"
+        style="display:none;">
+        ▶ Iniciar Estación 3
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       RETO 1
+  ========================= -->
+
+  <div class="screen" id="screen-1">
+
+    <div class="progress" data-progress></div>
+
+    <div class="eyebrow">
+      Reto 1 / 5 · QR-01
+    </div>
+
+    <h1>
+      Identificación de Componentes
+    </h1>
+
+    <p class="dim">
+      Cinco componentes han sido registrados en el sistema.
+      Las descripciones contienen pistas técnicas, pero no revelan
+      directamente el nombre del componente. Analiza cada función
+      y relaciona correctamente cada componente con su letra.
+    </p>
+
+    <div
+      class="match-grid"
+      id="matchDescs">
+    </div>
+
+    <h3 style="margin-top:18px;">
+      Asigna cada nombre a su letra
+    </h3>
+
+    <div
+      id="matchNames"
+      style="display:flex; flex-direction:column; gap:8px;">
+    </div>
+
+    <div class="row" style="margin-top:16px;">
+
+      <button
+        class="primary"
+        id="checkReto1">
+        Verificar emparejamiento
+      </button>
+
+    </div>
+
+    <div
+      class="msg"
+      id="msg1">
+    </div>
+
+    <details class="hint">
+
+      <summary>
+        💡 Pista
+      </summary>
+
+      <p>
+        Piensa en la función principal de cada componente.
+        Algunos trabajan temporalmente y otros conservan información
+        aunque el equipo esté apagado.
+      </p>
+
+    </details>
+
+    <div
+      id="unlock1"
+      style="display:none;">
+
+      <hr style="border-color:var(--border); margin:20px 0;">
+
+      <h3>
+        Clave obtenida
+      </h3>
+
+      <div
+        class="final-code"
+        id="key1display"
+        style="font-size:26px;">
+      </div>
+
+      <button
+        class="primary"
+        id="goTo2">
+        Continuar → Escanear QR-02
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       RETO 2
+  ========================= -->
+
+  <div class="screen" id="screen-2">
+
+    <div class="progress" data-progress></div>
+
+    <div
+      id="gate2"
+      class="lockwrap">
+
+      <div class="lockicon">
+        🔒
+      </div>
+
+      <h2>
+        Acceso bloqueado
+      </h2>
+
+      <p class="dim">
+        Ingresa la clave obtenida en el Reto 1 para desbloquear este QR.
+      </p>
+
+      <div
+        class="field-row"
+        style="max-width:280px; margin:0 auto;">
+
+        <input
+          type="text"
+          id="gateInput2"
+          placeholder="CLAVE DEL RETO 1">
+
+        <button
+          class="primary"
+          id="gateBtn2">
+          Desbloquear
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="gateMsg2">
+      </div>
+
+    </div>
+
+
+    <div
+      id="content2"
+      style="display:none;">
+
+      <div class="eyebrow">
+        Reto 2 / 5 · QR-02
+      </div>
+
+      <h1>
+        Sopa de Letras Técnica
+      </h1>
+
+      <p class="dim">
+        Encuentra las 10 palabras técnicas ocultas en una cuadrícula
+        de 15×15. Pueden aparecer horizontal, vertical o diagonalmente,
+        y algunas están escritas al revés. Varias palabras comparten
+        letras con otras.
+      </p>
+
+      <div
+        class="word-list"
+        id="wordList">
+      </div>
+
+      <div id="wsGrid"></div>
+
+      <div
+        class="msg"
+        id="msg2ready">
+      </div>
+
+      <div style="margin-top:18px;">
+
+        <h3>
+          Clave de seguridad
+        </h3>
+
+        <p
+          class="dim"
+          style="font-size:13px;">
+
+          Después de encontrar todas las palabras,
+          identifica cuál de ellas protege el perímetro
+          de una red y escríbela para avanzar.
+
+        </p>
+
+        <div class="field-row">
+
+          <input
+            type="text"
+            id="key2input"
+            placeholder="ESCRIBE LA CLAVE">
+
+          <button
+            class="primary"
+            id="checkReto2">
+            Verificar
+          </button>
+
+        </div>
+
+        <div
+          class="msg"
+          id="msg2">
+        </div>
+
+      </div>
+
+      <details class="hint">
+
+        <summary>
+          💡 Pista
+        </summary>
+
+        <p>
+          Es el "muro" que controla y filtra el tráfico entre
+          una red y el exterior.
+        </p>
+
+      </details>
+
+      <div
+        id="unlock2"
+        style="display:none;">
+
+        <hr style="border-color:var(--border); margin:20px 0;">
+
+        <h3>
+          Clave obtenida
+        </h3>
+
+        <div
+          class="final-code"
+          id="key2display"
+          style="font-size:26px;">
+        </div>
+
+        <button
+          class="primary"
+          id="goTo3">
+          Continuar → Escanear QR-03
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       RETO 3
+  ========================= -->
+
+  <div class="screen" id="screen-3">
+
+    <div class="progress" data-progress></div>
+
+    <div
+      id="gate3"
+      class="lockwrap">
+
+      <div class="lockicon">
+        🔒
+      </div>
+
+      <h2>
+        Acceso bloqueado
+      </h2>
+
+      <p class="dim">
+        Ingresa la clave obtenida en el Reto 2.
+      </p>
+
+      <div
+        class="field-row"
+        style="max-width:280px; margin:0 auto;">
+
+        <input
+          type="text"
+          id="gateInput3"
+          placeholder="CLAVE DEL RETO 2">
+
+        <button
+          class="primary"
+          id="gateBtn3">
+          Desbloquear
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="gateMsg3">
+      </div>
+
+    </div>
+
+
+    <div
+      id="content3"
+      style="display:none;">
+
+      <div class="eyebrow">
+        Reto 3 / 5 · QR-03
+      </div>
+
+      <h1>
+        Crucigrama de TI
+      </h1>
+
+      <p class="dim">
+        Resuelve las 9 pistas técnicas.
+        Al completar el crucigrama, una palabra vertical
+        se iluminará: esa es tu clave.
+      </p>
+
+      <div class="cw-scroll">
+        <div id="cwGrid"></div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+
+        <button
+          class="primary"
+          id="checkReto3">
+          Verificar crucigrama
+        </button>
+
+        <span
+          class="msg"
+          id="msg3"
+          style="margin-top:0;">
+        </span>
+
+      </div>
+
+      <div
+        class="clue-list"
+        id="clueList">
+      </div>
+
+      <details class="hint">
+
+        <summary>
+          💡 Pista
+        </summary>
+
+        <p>
+          La palabra iluminada es el periférico de salida
+          que muestra la imagen en pantalla.
+        </p>
+
+      </details>
+
+      <div
+        id="unlock3"
+        style="display:none;">
+
+        <hr style="border-color:var(--border); margin:20px 0;">
+
+        <h3>
+          Clave obtenida
+        </h3>
+
+        <div
+          class="final-code"
+          id="key3display"
+          style="font-size:26px;">
+        </div>
+
+        <button
+          class="primary"
+          id="goTo4">
+          Continuar → Escanear QR-04
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       RETO 4
+  ========================= -->
+
+  <div class="screen" id="screen-4">
+
+    <div class="progress" data-progress></div>
+
+    <div
+      id="gate4"
+      class="lockwrap">
+
+      <div class="lockicon">
+        🔒
+      </div>
+
+      <h2>
+        Acceso bloqueado
+      </h2>
+
+      <p class="dim">
+        Ingresa la clave obtenida en el Reto 3.
+      </p>
+
+      <div
+        class="field-row"
+        style="max-width:280px; margin:0 auto;">
+
+        <input
+          type="text"
+          id="gateInput4"
+          placeholder="CLAVE DEL RETO 3">
+
+        <button
+          class="primary"
+          id="gateBtn4">
+          Desbloquear
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="gateMsg4">
+      </div>
+
+    </div>
+
+
+    <div
+      id="content4"
+      style="display:none;">
+
+      <div class="eyebrow">
+        Reto 4 / 5 · QR-04
+      </div>
+
+      <h1>
+        Orden del Proceso de Arranque
+      </h1>
+
+      <p class="dim">
+        Toca las tarjetas en el orden correcto en que ocurren
+        al encender una PC.
+      </p>
+
+      <div
+        class="sequence-track"
+        id="seq4">
+
+        <span
+          class="dim"
+          style="font-size:12px;">
+          Tu secuencia aparecerá aquí…
+        </span>
+
+      </div>
+
+      <div
+        class="order-pool"
+        id="pool4">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+
+        <button
+          class="ghost small"
+          id="reset4">
+          ↺ Reiniciar orden
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="msg4">
+      </div>
+
+      <details class="hint">
+
+        <summary>
+          💡 Pista
+        </summary>
+
+        <p>
+          Todo arranque empieza con una autoprueba de hardware
+          (POST) antes de que se cargue cualquier software.
+        </p>
+
+      </details>
+
+      <div
+        id="unlock4"
+        style="display:none;">
+
+        <hr style="border-color:var(--border); margin:20px 0;">
+
+        <h3>
+          Clave obtenida
+        </h3>
+
+        <div
+          class="final-code"
+          id="key4display"
+          style="font-size:26px;">
+        </div>
+
+        <button
+          class="primary"
+          id="goTo5">
+          Continuar → Escanear QR-05
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       RETO 5
+  ========================= -->
+
+  <div class="screen" id="screen-5">
+
+    <div class="progress" data-progress></div>
+
+    <div
+      id="gate5"
+      class="lockwrap">
+
+      <div class="lockicon">
+        🔒
+      </div>
+
+      <h2>
+        Acceso bloqueado
+      </h2>
+
+      <p class="dim">
+        Ingresa la clave obtenida en el Reto 4.
+      </p>
+
+      <div
+        class="field-row"
+        style="max-width:280px; margin:0 auto;">
+
+        <input
+          type="text"
+          id="gateInput5"
+          placeholder="CLAVE DEL RETO 4">
+
+        <button
+          class="primary"
+          id="gateBtn5">
+          Desbloquear
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="gateMsg5">
+      </div>
+
+    </div>
+
+
+    <div
+      id="content5"
+      style="display:none;">
+
+      <div class="eyebrow">
+        Reto 5 / 5 · QR-05 · Final
+      </div>
+
+      <h1>
+        Caso de Soporte Técnico
+      </h1>
+
+      <div
+        class="mono-block"
+        style="margin-bottom:14px;">
+
+        TICKET #3311 — "La PC no enciende:
+        al presionar el botón de encendido,
+        la fuente de poder emite una serie de pitidos
+        (beeps) y ningún LED del monitor se enciende."
+
+      </div>
+
+      <p class="dim">
+        Ordena los pasos de diagnóstico como los seguiría un técnico:
+        de lo más simple a lo más invasivo.
+      </p>
+
+      <div
+        class="sequence-track"
+        id="seq5">
+
+        <span
+          class="dim"
+          style="font-size:12px;">
+          Tu secuencia aparecerá aquí…
+        </span>
+
+      </div>
+
+      <div
+        class="order-pool"
+        id="pool5">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+
+        <button
+          class="ghost small"
+          id="reset5">
+          ↺ Reiniciar orden
+        </button>
+
+      </div>
+
+      <div
+        class="msg"
+        id="msg5">
+      </div>
+
+      <details class="hint">
+
+        <summary>
+          💡 Pista
+        </summary>
+
+        <p>
+          Primero descarta lo simple, como cables e interruptores,
+          antes de abrir el gabinete.
+        </p>
+
+      </details>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       FINAL
+  ========================= -->
+
+  <div class="screen" id="screen-final">
+
+    <div class="lockwrap">
+
+      <div class="lockicon">
+        🏁
+      </div>
+
+      <h1>
+        ACCESO CONCEDIDO
+      </h1>
+
+      <p class="dim">
+        Estación 3 superada.
+        Entrega este código al facilitador para validar tu salida.
+      </p>
+
+      <div
+        class="final-code"
+        id="finalCode">
+      </div>
+
+      <button
+        class="primary"
+        id="restartBtn">
+        ↺ Reiniciar Estación 3
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div style="padding:0 22px 22px;">
+
+    <details
+      class="hint"
+      style="border-color:#2a2a1c;">
+
+      <summary style="color:#8a8a55;">
+        ⓘ Nota para el facilitador
+      </summary>
+
+      <p
+        style="font-size:12px; color:var(--ink-dim);">
+
+        Genera un código QR distinto para cada uno de los 5 retos
+        apuntando todos a esta misma URL.
+
+        El equipo avanza dentro de la app ingresando,
+        en cada pantalla bloqueada, la clave obtenida
+        en el reto anterior.
+
+      </p>
+
+    </details>
+
+  </div>
+
+</div>
+
+
+<script>
+(function(){
+
+  "use strict";
+
+
+  /* =====================================================
+     BOOT
+  ===================================================== */
+
+  const bootLines = [
+
+    "BIOS ESTACION-3 v2.6.1",
+    "Copyright (c) Taller de Hardware y Redes",
+    "",
+    "Ejecutando POST.......................... OK",
+    "Detectando 5 retos consecutivos.......... OK",
+    "Cargando módulo QR-01..................... OK",
+    "Verificando integridad del laberinto...... OK",
+    "",
+    "Bienvenido/a, equipo.",
+    "La Estación 3 pondrá a prueba",
+    "sus conocimientos de hardware,",
+    "redes y soporte técnico.",
+    "",
+    "ADVERTENCIA:",
+    "Los retos aumentarán de dificultad.",
+    "Cada clave desbloquea el siguiente nivel.",
+    "",
+    "¡Buena suerte!"
+  ];
+
+
+  const bootLog = document.getElementById('bootLog');
+
+  bootLog.textContent = "";
+
+  let li = 0;
+
+
+  function typeLine(){
+
+    if(li >= bootLines.length){
+
+      document.getElementById('btnStart').style.display =
+        'inline-block';
+
+      return;
+    }
+
+    bootLog.textContent +=
+      (li > 0 ? "\n" : "") +
+      bootLines[li];
+
+    li++;
+
+    setTimeout(typeLine,90);
+  }
+
+
+  typeLine();
+
+
+  /* =====================================================
+     SISTEMA DE PANTALLAS
+  ===================================================== */
+
+  const SCREENS = [
+    'screen-boot',
+    'screen-1',
+    'screen-2',
+    'screen-3',
+    'screen-4',
+    'screen-5',
+    'screen-final'
+  ];
+
+
+  function show(id){
+
+    SCREENS.forEach(s => {
+
+      document
+        .getElementById(s)
+        .classList
+        .toggle('active',s === id);
+
+    });
+
+    window.scrollTo({
+      top:0,
+      behavior:'smooth'
+    });
+
+    updateProgress(id);
+  }
+
+
+  function updateProgress(id){
+
+    const idx = {
+
+      'screen-1':0,
+      'screen-2':1,
+      'screen-3':2,
+      'screen-4':3,
+      'screen-5':4
+
+    }[id];
+
+
+    document
+      .querySelectorAll('[data-progress]')
+      .forEach(bar=>{
+
+        bar.innerHTML = "";
+
+        for(let i=0;i<5;i++){
+
+          const seg =
+            document.createElement('div');
+
+          seg.className =
+            'seg' +
+            (
+              idx === undefined
+              ? ''
+              : (
+                i < idx
+                ? ' done'
+                : (
+                  i === idx
+                  ? ' current'
+                  : ''
+                )
+              )
+            );
+
+          bar.appendChild(seg);
+
+        }
+
+      });
+
+  }
+
+
+  document
+    .getElementById('btnStart')
+    .addEventListener(
+      'click',
+      ()=>show('screen-1')
+    );
+
+
+  /* =====================================================
+     RETO 1
+     DIFICULTAD MEDIA
+  ===================================================== */
+
+  const parts = [
+
+    {
+      id:'A',
+
+      desc:
+      "Unidad de procesamiento que interpreta " +
+      "y ejecuta instrucciones. Trabaja junto " +
+      "al sistema de memoria y suele estar " +
+      "cubierta por un sistema de refrigeración.",
+
+      correct:'CPU',
+      secret:'P'
+    },
+
+    {
+      id:'B',
+
+      desc:
+      "Módulo utilizado temporalmente por los " +
+      "programas mientras el equipo está funcionando. " +
+      "Su contenido desaparece cuando se corta " +
+      "la energía.",
+
+      correct:'RAM',
+      secret:'L'
+    },
+
+    {
+      id:'C',
+
+      desc:
+      "Componente especializado en cálculos " +
+      "relacionados con imágenes, gráficos y video. " +
+      "Normalmente incorpora refrigeración propia " +
+      "y puede ofrecer salidas digitales.",
+
+      correct:'GPU',
+      secret:'A'
+    },
+
+    {
+      id:'D',
+
+      desc:
+      "Dispositivo destinado a conservar archivos " +
+      "y programas incluso cuando el equipo está " +
+      "apagado. En una versión mecánica utiliza " +
+      "platos internos para almacenar información.",
+
+      correct:'HDD',
+      secret:'C'
+    },
+
+    {
+      id:'E',
+
+      desc:
+      "Componente encargado de recibir energía " +
+      "eléctrica de la red y transformarla en " +
+      "diferentes niveles de alimentación que " +
+      "utilizan la placa y los demás dispositivos.",
+
+      correct:'PSU',
+      secret:'A'
+    }
+
+  ];
+
+
+  const names = [
+
+    {
+      name:'GPU (Procesamiento gráfico)',
+      correct:'C'
+    },
+
+    {
+      name:'HDD (Almacenamiento permanente)',
+      correct:'D'
+    },
+
+    {
+      name:'CPU (Procesamiento de instrucciones)',
+      correct:'A'
+    },
+
+    {
+      name:'PSU (Alimentación)',
+      correct:'E'
+    },
+
+    {
+      name:'RAM (Memoria temporal)',
+      correct:'B'
+    }
+
+  ];
+
+
+  const descsWrap =
+    document.getElementById('matchDescs');
+
+
+  const namesWrap =
+    document.getElementById('matchNames');
+
+
+  /*
+     Las descripciones aparecen
+     en orden aleatorio.
+  */
+
+  const shuffledParts =
+    [...parts]
+      .sort(()=>Math.random()-0.5);
+
+
+  shuffledParts.forEach(p=>{
+
+    const div =
+      document.createElement('div');
+
+    div.className =
+      'match-card';
+
+
+    div.innerHTML = `
+
+      <div class="letter-badge">
+        ${p.id}
+      </div>
+
+      <div class="desc">
+        ${p.desc}
+      </div>
+
+    `;
+
+
+    descsWrap.appendChild(div);
+
+  });
+
+
+  /*
+     Los nombres también aparecen
+     en orden aleatorio.
+  */
+
+  const shuffledNames =
+    [...names]
+      .sort(()=>Math.random()-0.5);
+
+
+  shuffledNames.forEach(n=>{
+
+    const div =
+      document.createElement('div');
+
+    div.className =
+      'match-card';
+
+
+    div.innerHTML = `
+
+      <div class="desc" style="flex:1;">
+        ${n.name}
+      </div>
+
+      <select data-answer="${n.correct}">
+
+        <option value="">
+          – Selecciona –
+        </option>
+
+        ${parts.map(p=>`
+
+          <option value="${p.id}">
+            ${p.id}
+          </option>
+
+        `).join('')}
+
+      </select>
+
+    `;
+
+
+    namesWrap.appendChild(div);
+
+  });
+
+
+  document
+    .getElementById('checkReto1')
+    .addEventListener('click',()=>{
+
+      const selects =
+        namesWrap.querySelectorAll('select');
+
+
+      let allCorrect = true;
+      let answered = true;
+
+
+      selects.forEach(sel=>{
+
+        if(!sel.value){
+          answered = false;
+        }
+
+        if(
+          sel.value !==
+          sel.dataset.answer
+        ){
+          allCorrect = false;
+        }
+
+      });
+
+
+      const msg =
+        document.getElementById('msg1');
+
+
+      if(!answered){
+
+        msg.className =
+          'msg show err';
+
+        msg.textContent =
+          'Debes completar todas las asociaciones antes de verificar.';
+
+        return;
+
+      }
+
+
+      if(allCorrect){
+
+        msg.className =
+          'msg show ok';
+
+        msg.textContent =
+          'Correcto. Has identificado correctamente los cinco componentes.';
+
+
+        /*
+           La clave siempre se obtiene
+           en el orden CPU → RAM → GPU → HDD → PSU
+        */
+
+        const keyOrder = [
+          'CPU',
+          'RAM',
+          'GPU',
+          'HDD',
+          'PSU'
+        ];
+
+
+        const key1 =
+          keyOrder
+            .map(component =>
+              parts.find(
+                p => p.correct === component
+              ).secret
+            )
+            .join('');
+
+
+        document
+          .getElementById('key1display')
+          .textContent = key1;
+
+
+        document
+          .getElementById('unlock1')
+          .style.display = 'block';
+
+
+        window.CLAVE1 = key1;
+
+      }
+
+      else{
+
+        msg.className =
+          'msg show err';
+
+        msg.textContent =
+          'Hay asociaciones incorrectas. Analiza cuidadosamente las funciones de cada componente.';
+
+      }
+
+    });
+
+
+  document
+    .getElementById('goTo2')
+    .addEventListener(
+      'click',
+      ()=>show('screen-2')
+    );
+
+
+  /* =====================================================
+     GATES
+  ===================================================== */
+
+  function setupGate(
+    n,
+    requiredKeyGetter,
+    onUnlock
+  ){
+
+    const btn =
+      document.getElementById(
+        'gateBtn'+n
+      );
+
+
+    const input =
+      document.getElementById(
+        'gateInput'+n
+      );
+
+
+    const msg =
+      document.getElementById(
+        'gateMsg'+n
+      );
+
+
+    function tryUnlock(){
+
+      const val =
+        input.value
+          .trim()
+          .toUpperCase();
+
+
+      const required =
+        requiredKeyGetter();
+
+
+      if(
+        val &&
+        val === required
+      ){
+
+        document
+          .getElementById('gate'+n)
+          .style.display = 'none';
+
+
+        document
+          .getElementById('content'+n)
+          .style.display = 'block';
+
+
+        if(onUnlock){
+          onUnlock();
+        }
+
+      }
+
+      else{
+
+        msg.className =
+          'msg show err';
+
+        msg.textContent =
+          'Clave incorrecta. Verifica el código del reto anterior.';
+
+      }
+
+    }
+
+
+    btn.addEventListener(
+      'click',
+      tryUnlock
+    );
+
+
+    input.addEventListener(
+      'keydown',
+      e=>{
+
+        if(e.key === 'Enter'){
+          tryUnlock();
+        }
+
+      }
+    );
+
+  }
+
+
+  /* =====================================================
+     RETO 2
+     SOPA DE LETRAS DIFÍCIL
+  ===================================================== */
+
+  const WS_WORDS = [
+
+    "PROCESADOR",
+    "ETHERNET",
+    "FIREWALL",
+    "MEMORIA",
+    "SERVIDOR",
+    "ROUTER",
+    "CONTROLADOR",
+    "PROTOCOLO",
+    "SOFTWARE",
+    "BACKUP"
+
+  ];
+
+
+  /*
+     Ahora es 15 x 15
+  */
+
+  const WS_SIZE = 15;
+
+
+  /*
+     La clave continúa siendo FIREWALL
+  */
+
+  const KEY2 = "FIREWALL";
+
+
+  let wsGridData = [];
+
+
+  /*
+     8 direcciones:
+     horizontal
+     vertical
+     diagonal
+     y sus inversas
+  */
+
+  const DIRS = [
+
+    [1,0],
+    [-1,0],
+
+    [0,1],
+    [0,-1],
+
+    [1,1],
+    [1,-1],
+
+    [-1,1],
+    [-1,-1]
+
+  ];
+
+
+  function buildWordSearch(){
+
+    /*
+       Intentamos generar una cuadrícula
+       con palabras cruzadas.
+    */
+
+    for(
+      let attempt=0;
+      attempt<300;
+      attempt++
+    ){
+
+      const grid =
+        Array.from(
+          {length:WS_SIZE},
+          ()=>Array(WS_SIZE).fill(null)
+        );
+
+
+      const placed = [];
+
+
+      /*
+         Primero colocamos las palabras
+         más largas.
+      */
+
+      const words =
+        [...WS_WORDS]
+          .sort((a,b)=>b.length-a.length);
+
+
+      let ok = true;
+
+
+      for(const word of words){
+
+        let placedWord = false;
+
+
+        for(
+          let t=0;
+          t<1000;
+          t++
+        ){
+
+          const dir =
+            DIRS[
+              Math.floor(
+                Math.random()*DIRS.length
+              )
+            ];
+
+
+          const row =
+            Math.floor(
+              Math.random()*WS_SIZE
+            );
+
+
+          const col =
+            Math.floor(
+              Math.random()*WS_SIZE
+            );
+
+
+          const endRow =
+            row +
+            dir[0]*
+            (word.length-1);
+
+
+          const endCol =
+            col +
+            dir[1]*
+            (word.length-1);
+
+
+          /*
+             Comprobar límites.
+          */
+
+          if(
+            endRow<0 ||
+            endRow>=WS_SIZE ||
+            endCol<0 ||
+            endCol>=WS_SIZE
+          ){
+            continue;
+          }
+
+
+          let fits = true;
+
+
+          /*
+             Comprobar si puede cruzarse.
+          */
+
+          for(
+            let i=0;
+            i<word.length;
+            i++
+          ){
+
+            const r =
+              row +
+              dir[0]*i;
+
+
+            const c =
+              col +
+              dir[1]*i;
+
+
+            const cur =
+              grid[r][c];
+
+
+            if(
+              cur !== null &&
+              cur !== word[i]
+            ){
+
+              fits = false;
+              break;
+
+            }
+
+          }
+
+
+          if(!fits){
+            continue;
+          }
+
+
+          /*
+             Colocar palabra.
+          */
+
+          for(
+            let i=0;
+            i<word.length;
+            i++
+          ){
+
+            const r =
+              row +
+              dir[0]*i;
+
+
+            const c =
+              col +
+              dir[1]*i;
+
+
+            grid[r][c] =
+              word[i];
+
+          }
+
+
+          placed.push({
+            word,
+            row,
+            col,
+            dir
+          });
+
+
+          placedWord = true;
+
+          break;
+
+        }
+
+
+        if(!placedWord){
+
+          ok = false;
+          break;
+
+        }
+
+      }
+
+
+      if(ok){
+
+        /*
+           Rellenar huecos con letras aleatorias.
+        */
+
+        const ABC =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
+        for(
+          let r=0;
+          r<WS_SIZE;
+          r++
+        ){
+
+          for(
+            let c=0;
+            c<WS_SIZE;
+            c++
+          ){
+
+            if(
+              grid[r][c] === null
+            ){
+
+              grid[r][c] =
+                ABC[
+                  Math.floor(
+                    Math.random()*ABC.length
+                  )
+                ];
+
+            }
+
+          }
+
+        }
+
+
+        return {
+          grid,
+          placed
+        };
+
+      }
+
+    }
+
+
+    return null;
+
+  }
+
+
+  const wsResult =
+    buildWordSearch();
+
+
+  const wordListWrap =
+    document.getElementById(
+      'wordList'
+    );
+
+
+  WS_WORDS.forEach(w=>{
+
+    const chip =
+      document.createElement('span');
+
+
+    chip.className =
+      'word-chip';
+
+
+    chip.id =
+      'chip-'+w;
+
+
+    chip.textContent =
+      w;
+
+
+    wordListWrap.appendChild(chip);
+
+  });
+
+
+  const wsGridEl =
+    document.getElementById(
+      'wsGrid'
+    );
+
+
+  const foundWords =
+    new Set();
+
+
+  let selecting = false;
+
+  let selStart = null;
+
+  let selCells = [];
+
+
+  function cellKey(r,c){
+
+    return r+'_'+c;
+
+  }
+
+
+  const cellEls = {};
+
+
+  if(wsResult){
+
+    for(
+      let r=0;
+      r<WS_SIZE;
+      r++
+    ){
+
+      for(
+        let c=0;
+        c<WS_SIZE;
+        c++
+      ){
+
+        const div =
+          document.createElement('div');
+
+
+        div.className =
+          'ws-cell';
+
+
+        div.textContent =
+          wsResult.grid[r][c];
+
+
+        div.dataset.r = r;
+        div.dataset.c = c;
+
+
+        wsGridEl.appendChild(div);
+
+
+        cellEls[
+          cellKey(r,c)
+        ] = div;
+
+      }
+
+    }
+
+  }
+
+
+  function cellsBetween(a,b){
+
+    const dr =
+      Math.sign(
+        b.r-a.r
+      );
+
+
+    const dc =
+      Math.sign(
+        b.c-a.c
+      );
+
+
+    /*
+       Solo se permiten líneas rectas
+       o diagonales perfectas.
+    */
+
+    if(
+      a.r!==b.r &&
+      a.c!==b.c &&
+      Math.abs(b.r-a.r)!==
+      Math.abs(b.c-a.c)
+    ){
+
+      return null;
+
+    }
+
+
+    const len =
+      Math.max(
+        Math.abs(b.r-a.r),
+        Math.abs(b.c-a.c)
+      )+1;
+
+
+    const cells = [];
+
+
+    for(
+      let i=0;
+      i<len;
+      i++
+    ){
+
+      cells.push({
+
+        r:a.r+dr*i,
+
+        c:a.c+dc*i
+
+      });
+
+    }
+
+
+    return cells;
+
+  }
+
+
+  function clearSelecting(){
+
+    selCells.forEach(cl=>{
+
+      cellEls[
+        cellKey(cl.r,cl.c)
+      ]
+      .classList
+      .remove('selecting');
+
+    });
+
+
+    selCells = [];
+
+  }
+
+
+  function paintSelection(
+    from,
+    to
+  ){
+
+    clearSelecting();
+
+
+    const cells =
+      cellsBetween(
+        from,
+        to
+      );
+
+
+    if(!cells){
+      return;
+    }
+
+
+    selCells =
+      cells;
+
+
+    cells.forEach(cl=>{
+
+      cellEls[
+        cellKey(cl.r,cl.c)
+      ]
+      .classList
+      .add('selecting');
+
+    });
+
+  }
+
+
+  function finishSelection(to){
+
+    if(!selStart){
+      return;
+    }
+
+
+    const cells =
+      cellsBetween(
+        selStart,
+        to
+      );
+
+
+    clearSelecting();
+
+
+    selecting = false;
+
+    selStart = null;
+
+
+    if(!cells){
+      return;
+    }
+
+
+    const letters =
+      cells
+        .map(
+          cl =>
+            wsResult
+              .grid[cl.r][cl.c]
+        )
+        .join('');
+
+
+    const rev =
+      letters
+        .split('')
+        .reverse()
+        .join('');
+
+
+    const match =
+      WS_WORDS.find(
+        w =>
+          (
+            w === letters ||
+            w === rev
+          ) &&
+          !foundWords.has(w)
+      );
+
+
+    if(match){
+
+      foundWords.add(match);
+
+
+      cells.forEach(cl=>{
+
+        cellEls[
+          cellKey(cl.r,cl.c)
+        ]
+        .classList
+        .add('found');
+
+      });
+
+
+      document
+        .getElementById(
+          'chip-'+match
+        )
+        .classList
+        .add('found');
+
+
+      if(
+        foundWords.size ===
+        WS_WORDS.length
+      ){
+
+        const rd =
+          document.getElementById(
+            'msg2ready'
+          );
+
+
+        rd.className =
+          'msg show ok';
+
+
+        rd.textContent =
+          '¡Encontraron las 10 palabras! Ahora identifiquen la clave de seguridad.';
+
+      }
+
+    }
+
+  }
+
+
+  if(wsResult){
+
+    /*
+       PC - mouse
+    */
+
+    wsGridEl.addEventListener(
+      'mousedown',
+      e=>{
+
+        const t =
+          e.target.closest(
+            '.ws-cell'
+          );
+
+
+        if(!t){
+          return;
+        }
+
+
+        selecting = true;
+
+
+        selStart = {
+
+          r:+t.dataset.r,
+
+          c:+t.dataset.c
+
+        };
+
+
+        paintSelection(
+          selStart,
+          selStart
+        );
+
+      }
+    );
+
+
+    wsGridEl.addEventListener(
+      'mouseover',
+      e=>{
+
+        if(!selecting){
+          return;
+        }
+
+
+        const t =
+          e.target.closest(
+            '.ws-cell'
+          );
+
+
+        if(!t){
+          return;
+        }
+
+
+        paintSelection(
+          selStart,
+          {
+            r:+t.dataset.r,
+            c:+t.dataset.c
+          }
+        );
+
+      }
+    );
+
+
+    window.addEventListener(
+      'mouseup',
+      e=>{
+
+        if(!selecting){
+          return;
+        }
+
+
+        const t =
+          e.target.closest(
+            '.ws-cell'
+          );
+
+
+        finishSelection(
+
+          t
+          ? {
+              r:+t.dataset.r,
+              c:+t.dataset.c
+            }
+          : selStart
+
+        );
+
+      }
+    );
+
+
+    /*
+       Celular / tablet
+    */
+
+    wsGridEl.addEventListener(
+      'touchstart',
+      e=>{
+
+        const t =
+          e.target.closest(
+            '.ws-cell'
+          );
+
+
+        if(!t){
+          return;
+        }
+
+
+        selecting = true;
+
+
+        selStart = {
+
+          r:+t.dataset.r,
+
+          c:+t.dataset.c
+
+        };
+
+
+        paintSelection(
+          selStart,
+          selStart
+        );
+
+      },
+      {
+        passive:true
+      }
+    );
+
+
+    wsGridEl.addEventListener(
+      'touchmove',
+      e=>{
+
+        if(!selecting){
+          return;
+        }
+
+
+        const touch =
+          e.touches[0];
+
+
+        const el =
+          document.elementFromPoint(
+            touch.clientX,
+            touch.clientY
+          );
+
+
+        const t =
+          el &&
+          el.closest(
+            '.ws-cell'
+          );
+
+
+        if(!t){
+          return;
+        }
+
+
+        paintSelection(
+          selStart,
+          {
+            r:+t.dataset.r,
+            c:+t.dataset.c
+          }
+        );
+
+      },
+      {
+        passive:true
+      }
+    );
+
+
+    wsGridEl.addEventListener(
+      'touchend',
+      ()=>{
+
+        if(!selecting){
+          return;
+        }
+
+
+        finishSelection(
+
+          selCells.length
+          ? selCells[
+              selCells.length-1
+            ]
+          : selStart
+
+        );
+
+      }
+    );
+
+  }
+
+
+  document
+    .getElementById('checkReto2')
+    .addEventListener(
+      'click',
+      ()=>{
+
+        const val =
+          document
+            .getElementById(
+              'key2input'
+            )
+            .value
+            .trim()
+            .toUpperCase();
+
+
+        const msg =
+          document.getElementById(
+            'msg2'
+          );
+
+
+        /*
+           Ahora deben encontrar
+           absolutamente todas las palabras.
+        */
+
+        if(
+          foundWords.size <
+          WS_WORDS.length
+        ){
+
+          msg.className =
+            'msg show err';
+
+
+          msg.textContent =
+            'Todavía faltan palabras por encontrar en la sopa de letras.';
+
+
+          return;
+
+        }
+
+
+        if(val === KEY2){
+
+          msg.className =
+            'msg show ok';
+
+
+          msg.textContent =
+            'Correcto. Firewall identificado.';
+
+
+          document
+            .getElementById(
+              'key2display'
+            )
+            .textContent =
+            KEY2;
+
+
+          document
+            .getElementById(
+              'unlock2'
+            )
+            .style.display =
+            'block';
+
+        }
+
+        else{
+
+          msg.className =
+            'msg show err';
+
+
+          msg.textContent =
+            'Esa no es la palabra de seguridad. Inténtalo de nuevo.';
+
+        }
+
+      }
+    );
+
+
+  document
+    .getElementById('goTo3')
+    .addEventListener(
+      'click',
+      ()=>show('screen-3')
+    );
+
+
+  /* =====================================================
+     RETO 3
+  ===================================================== */
+
+  const CW_WORDS = [
+
+    {
+      num:1,
+      answer:'CPU',
+      row:1,
+      col:1,
+      dir:'H',
+      clue:"Se le conoce como el «cerebro» de la computadora."
+    },
+
+    {
+      num:2,
+      answer:'USB',
+      row:1,
+      col:3,
+      dir:'V',
+      clue:"Tipo de puerto y conector universal para periféricos."
+    },
+
+    {
+      num:3,
+      answer:'BYTE',
+      row:3,
+      col:3,
+      dir:'H',
+      clue:"Unidad básica de información, compuesta por 8 bits."
+    },
+
+    {
+      num:4,
+      answer:'TECLADO',
+      row:3,
+      col:5,
+      dir:'V',
+      clue:"Periférico de entrada que se usa para escribir."
+    },
+
+    {
+      num:5,
+      answer:'NUBE',
+      row:4,
+      col:2,
+      dir:'H',
+      clue:"Almacenamiento remoto al que se accede por internet."
+    },
+
+    {
+      num:6,
+      answer:'RAM',
+      row:4,
+      col:7,
+      dir:'V',
+      clue:"Memoria de acceso aleatorio; pierde los datos al apagar el equipo."
+    },
+
+    {
+      num:7,
+      answer:'MONITOR',
+      row:6,
+      col:7,
+      dir:'V',
+      clue:"Periférico de salida que muestra la imagen en pantalla."
+    },
+
+    {
+      num:8,
+      answer:'RATON',
+      row:7,
+      col:4,
+      dir:'H',
+      clue:"Periférico apuntador que mueve el cursor en pantalla."
+    },
+
+    {
+      num:9,
+      answer:'WIFI',
+      row:9,
+      col:6,
+      dir:'H',
+      clue:"Tecnología de conexión inalámbrica a una red."
+    }
+
+  ];
+
+
+  const KEY3 = 'MONITOR';
+
+  const HL_WORD_NUM = 7;
+
+
+  let maxRow = 0;
+  let maxCol = 0;
+
+
+  CW_WORDS.forEach(w=>{
+
+    const len =
+      w.answer.length;
+
+
+    const endRow =
+      w.dir === 'V'
+      ? w.row+len-1
+      : w.row;
+
+
+    const endCol =
+      w.dir === 'H'
+      ? w.col+len-1
+      : w.col;
+
+
+    maxRow =
+      Math.max(
+        maxRow,
+        endRow
+      );
+
+
+    maxCol =
+      Math.max(
+        maxCol,
+        endCol
+      );
+
+  });
+
+
+  const cwCells = {};
+
+
+  CW_WORDS.forEach(w=>{
+
+    for(
+      let i=0;
+      i<w.answer.length;
+      i++
+    ){
+
+      const r =
+        w.row +
+        (w.dir==='V' ? i : 0);
+
+
+      const c =
+        w.col +
+        (w.dir==='H' ? i : 0);
+
+
+      const k =
+        r+'_'+c;
+
+
+      if(!cwCells[k]){
+
+        cwCells[k] = {
+
+          letter:w.answer[i],
+
+          hl:false
+
+        };
+
+      }
+
+
+      if(i===0){
+
+        cwCells[k].num =
+          w.num;
+
+      }
+
+
+      if(w.num === HL_WORD_NUM){
+
+        cwCells[k].hl =
+          true;
+
+      }
+
+    }
+
+  });
+
+
+  const cwGridEl =
+    document.getElementById(
+      'cwGrid'
+    );
+
+
+  cwGridEl.style.gridTemplateColumns =
+    `repeat(${maxCol}, 30px)`;
+
+
+  cwGridEl.style.gridTemplateRows =
+    `repeat(${maxRow}, 30px)`;
+
+
+  const cwInputs = {};
+
+
+  for(
+    let r=1;
+    r<=maxRow;
+    r++
+  ){
+
+    for(
+      let c=1;
+      c<=maxCol;
+      c++
+    ){
+
+      const k =
+        r+'_'+c;
+
+
+      const div =
+        document.createElement('div');
+
+
+      if(cwCells[k]){
+
+        div.className =
+          'cw-cell active' +
+          (
+            cwCells[k].hl
+            ? ' hl'
+            : ''
+          );
+
+
+        if(cwCells[k].num){
+
+          const num =
+            document.createElement('span');
+
+
+          num.className =
+            'num';
+
+
+          num.textContent =
+            cwCells[k].num;
+
+
+          div.appendChild(num);
+
+        }
+
+
+        const input =
+          document.createElement('input');
+
+
+        input.maxLength = 1;
+
+        input.autocomplete =
+          'off';
+
+
+        div.appendChild(input);
+
+
+        cwInputs[k] =
+          input;
+
+      }
+
+      else{
+
+        div.className =
+          'cw-cell blocked';
+
+      }
+
+
+      cwGridEl.appendChild(div);
+
+    }
+
+  }
+
+
+  const clueListEl =
+    document.getElementById(
+      'clueList'
+    );
+
+
+  clueListEl.innerHTML =
+    CW_WORDS
+      .map(
+        w=>`
+
+          <div>
+
+            <b>${w.num}.</b>
+
+            (
+              ${w.dir==='H'
+                ? 'Horizontal'
+                : 'Vertical'}
+              ,
+              ${w.answer.length}
+              letras
+            )
+
+            —
+            ${w.clue}
+
+          </div>
+
+        `
+      )
+      .join('');
+
+
+  document
+    .getElementById('checkReto3')
+    .addEventListener(
+      'click',
+      ()=>{
+
+        let allOk = true;
+
+
+        Object.keys(cwCells)
+          .forEach(k=>{
+
+            const val =
+              (
+                cwInputs[k].value ||
+                ''
+              )
+              .trim()
+              .toUpperCase();
+
+
+            if(
+              val !==
+              cwCells[k].letter
+            ){
+
+              allOk = false;
+
+            }
+
+          });
+
+
+        const msg =
+          document.getElementById(
+            'msg3'
+          );
+
+
+        if(allOk){
+
+          msg.className =
+            'msg show ok';
+
+
+          msg.textContent =
+            '¡Crucigrama resuelto! Observa la columna resaltada.';
+
+
+          document
+            .getElementById(
+              'key3display'
+            )
+            .textContent =
+            KEY3;
+
+
+          document
+            .getElementById(
+              'unlock3'
+            )
+            .style.display =
+            'block';
+
+        }
+
+        else{
+
+          msg.className =
+            'msg show err';
+
+
+          msg.textContent =
+            'Aún hay letras incorrectas o casillas vacías.';
+
+        }
+
+      }
+    );
+
+
+  document
+    .getElementById('goTo4')
+    .addEventListener(
+      'click',
+      ()=>show('screen-4')
+    );
+
+
+  /* =====================================================
+     RETO 4 Y 5
+  ===================================================== */
+
+  function setupOrdering(cfg){
+
+    const poolEl =
+      document.getElementById(
+        cfg.poolId
+      );
+
+
+    const seqEl =
+      document.getElementById(
+        cfg.seqId
+      );
+
+
+    const msgEl =
+      document.getElementById(
+        cfg.msgId
+      );
+
+
+    let sequence = [];
+
+
+    cfg.items.forEach(item=>{
+
+      const div =
+        document.createElement('div');
+
+
+      div.className =
+        'order-item';
+
+
+      div.dataset.tag =
+        item.tag;
+
+
+      div.innerHTML = `
+
+        <span class="tag">
+          ${item.tag}
+        </span>
+
+        <span>
+          ${item.text}
+        </span>
+
+      `;
+
+
+      div.addEventListener(
+        'click',
+        ()=>{
+
+          if(
+            div.classList.contains(
+              'used'
+            )
+          ){
+            return;
+          }
+
+
+          sequence.push(
+            item.tag
+          );
+
+
+          div.classList.add(
+            'used'
+          );
+
+
+          renderSeq();
+
+
+          if(
+            sequence.length ===
+            cfg.items.length
+          ){
+
+            checkSeq();
+
+          }
+
+        }
+      );
+
+
+      poolEl.appendChild(div);
+
+    });
+
+
+    function renderSeq(){
+
+      if(sequence.length===0){
+
+        seqEl.innerHTML =
+          '<span class="dim" style="font-size:12px;">Tu secuencia aparecerá aquí…</span>';
+
+        return;
+
+      }
+
+
+      seqEl.innerHTML =
+        sequence
+          .map(
+            t =>
+              `<span class="seq-chip">${t}</span>`
+          )
+          .join('');
+
+    }
+
+
+    function reset(){
+
+      sequence = [];
+
+
+      poolEl
+        .querySelectorAll(
+          '.order-item'
+        )
+        .forEach(
+          d =>
+            d.classList.remove(
+              'used'
+            )
+        );
+
+
+      renderSeq();
+
+
+      msgEl.className =
+        'msg';
+
+    }
+
+
+    function checkSeq(){
+
+      const built =
+        sequence.join('');
+
+
+      if(
+        built === cfg.correct
+      ){
+
+        msgEl.className =
+          'msg show ok';
+
+
+        msgEl.textContent =
+          '¡Orden correcto!';
+
+
+        cfg.onSuccess(
+          built
+        );
+
+      }
+
+      else{
+
+        msgEl.className =
+          'msg show err';
+
+
+        msgEl.textContent =
+          'Ese orden no es correcto. Se reiniciará en un momento — inténtalo de nuevo.';
+
+
+        setTimeout(
+          reset,
+          1300
+        );
+
+      }
+
+    }
+
+
+    document
+      .getElementById(
+        cfg.resetId
+      )
+      .addEventListener(
+        'click',
+        reset
+      );
+
+
+    renderSeq();
+
+  }
+
+
+  /* =====================================================
+     RETO 4
+  ===================================================== */
+
+  const RETO4_ITEMS = [
+
+    {
+      tag:'A',
+      text:'Se inicializan los servicios y controladores del sistema.'
+    },
+
+    {
+      tag:'B',
+      text:'BIOS/UEFI ejecuta el POST (Power-On Self-Test).'
+    },
+
+    {
+      tag:'C',
+      text:'Aparece la pantalla de inicio de sesión del usuario.'
+    },
+
+    {
+      tag:'D',
+      text:'Se carga el Kernel del sistema operativo.'
+    },
+
+    {
+      tag:'E',
+      text:'Se carga el Bootloader (por ejemplo, GRUB).'
+    }
+
+  ];
+
+
+  const KEY4 = 'BEDAC';
+
+
+  setupOrdering({
+
+    poolId:'pool4',
+
+    seqId:'seq4',
+
+    msgId:'msg4',
+
+    resetId:'reset4',
+
+    items:RETO4_ITEMS,
+
+    correct:KEY4,
+
+    onSuccess:(code)=>{
+
+      document
+        .getElementById(
+          'key4display'
+        )
+        .textContent =
+        code;
+
+
+      document
+        .getElementById(
+          'unlock4'
+        )
+        .style.display =
+        'block';
+
+    }
+
+  });
+
+
+  document
+    .getElementById('goTo5')
+    .addEventListener(
+      'click',
+      ()=>show('screen-5')
+    );
+
+
+  /* =====================================================
+     RETO 5
+  ===================================================== */
+
+  const RETO5_ITEMS = [
+
+    {
+      tag:'A',
+      text:'Revisar las conexiones internas de cables (24 pines, alimentación de CPU) a la placa madre.'
+    },
+
+    {
+      tag:'B',
+      text:'Verificar que el cable de alimentación esté bien conectado a la toma de corriente y a la PSU.'
+    },
+
+    {
+      tag:'C',
+      text:'Probar con una fuente de poder (PSU) de reemplazo conocida como buena.'
+    },
+
+    {
+      tag:'D',
+      text:'Escuchar y contar el patrón de pitidos (beep code) para identificar el componente con fallo.'
+    },
+
+    {
+      tag:'E',
+      text:'Confirmar que el interruptor físico de la fuente de poder (PSU) esté encendido.'
+    },
+
+    {
+      tag:'F',
+      text:'Revisar que la memoria RAM esté correctamente asentada en su ranura.'
+    }
+
+  ];
+
+
+  const KEY5 =
+    'BEDFAC';
+
+
+  setupOrdering({
+
+    poolId:'pool5',
+
+    seqId:'seq5',
+
+    msgId:'msg5',
+
+    resetId:'reset5',
+
+    items:RETO5_ITEMS,
+
+    correct:KEY5,
+
+    onSuccess:(code)=>{
+
+      document
+        .getElementById(
+          'finalCode'
+        )
+        .textContent =
+        code;
+
+
+      setTimeout(
+        ()=>show('screen-final'),
+        900
+      );
+
+    }
+
+  });
+
+
+  /* =====================================================
+     CONEXIONES ENTRE RETOS
+  ===================================================== */
+
+  setupGate(
+    2,
+    ()=>window.CLAVE1 || 'PLACA'
+  );
+
+
+  setupGate(
+    3,
+    ()=>KEY2
+  );
+
+
+  setupGate(
+    4,
+    ()=>KEY3
+  );
+
+
+  setupGate(
+    5,
+    ()=>KEY4
+  );
+
+
+  /* =====================================================
+     REINICIAR
+  ===================================================== */
+
+  document
+    .getElementById('restartBtn')
+    .addEventListener(
+      'click',
+      ()=>location.reload()
+    );
+
+
+})();
+</script>
+
+</body>
+</html>
